@@ -23,6 +23,11 @@ function load(url: string): Observable<any> {
   }).retryWhen(retryStrategy({attempts: 3, delay: 1500}));
 }
 
+function loadWithFetch(url: string): Observable<Response> {
+  // defer allows the function to be lazy. Will only execute if someone subscribes to it.
+  return Observable.defer(() => Observable.fromPromise(fetch(url).then(response => response.json())));
+}
+
 function retryStrategy({attempts = 4, delay = 1000}: any): Function {
   return (errors: Observable<string>): Observable<any> => {
     return errors
@@ -35,7 +40,7 @@ function retryStrategy({attempts = 4, delay = 1000}: any): Function {
   };
 }
 
-function renderMovies(movies: any[]): void {
+function renderMovies(movies: any): void {
   movies.forEach(m => {
     const div = document.createElement('div');
     div.innerText = m.title;
@@ -44,7 +49,8 @@ function renderMovies(movies: any[]): void {
 }
 
 click
-  .flatMap(e => load('movies.json'))
+  // .flatMap(e => load('movies.json'))
+  .flatMap(e => loadWithFetch('movies.json'))
   .subscribe(
     renderMovies,
     e => console.log(`error: ${e}`),
