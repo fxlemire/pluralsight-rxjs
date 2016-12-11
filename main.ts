@@ -1,23 +1,36 @@
-import {Observable} from 'rxjs';
+import {Observable, Observer} from 'rxjs';
 
-let circle = document.getElementById('circle');
-let source = Observable.fromEvent(document, 'mousemove')
-  .map((e: MouseEvent) => {
-    return ({
-      x: e.clientX,
-      y: e.clientY,
+const output = document.getElementById('output');
+const button = document.getElementById('button');
+const click = Observable.fromEvent(button, 'click');
+
+function load(url: string): Observable<any> {
+  return Observable.create((observer: Observer<any>) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.addEventListener('load', () => {
+      const data: any[] = JSON.parse(xhr.responseText);
+      observer.next(data);
+      observer.complete();
     });
-  })
-  .filter(value => value.x < 500)
-  .delay(300);
 
-function onNext(value: any): void {
-  circle.style.left = `${value.x}px`;
-  circle.style.top = `${value.y}px`;
+    xhr.open('GET', url);
+    xhr.send();
+  });
 }
 
-source.subscribe(
-  onNext,
-  e => console.log(`error: ${e}`),
-  () => console.log('complete'),
-);
+function renderMovies(movies: any[]): void {
+  movies.forEach(m => {
+    const div = document.createElement('div');
+    div.innerText = m.title;
+    output.appendChild(div);
+  });
+}
+
+click
+  .flatMap(e => load('movies.json'))
+  .subscribe(
+    renderMovies,
+    e => console.log(`error: ${e}`),
+    () => console.log('complete'),
+  );
