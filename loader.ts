@@ -21,17 +21,28 @@ function load(url: string): Observable<any> {
 
 function loadWithFetch(url: string): Observable<Response> {
   // defer allows the function to be lazy. Will only execute if someone subscribes to it.
-  return Observable.defer(() => Observable.fromPromise(fetch(url).then(response => response.json())));
+  return Observable.defer(() => {
+    return Observable.fromPromise(
+      fetch(url).then(response => {
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          return Promise.reject(response);
+        }
+      }));
+  }).retryWhen(retryStrategy());
 }
 
-function retryStrategy({attempts = 4, delay = 1000}: any): Function {
+function retryStrategy({attempts = 4, delay = 1000} = {}): any { // tslint:disable-line:typedef
   return (errors: Observable<string>): Observable<any> => {
     return errors
       .scan((acc, value) => {
-        console.log(acc, value);
-        return ++acc;
+        if (++acc < attempts) {
+          return acc;
+        }
+
+        throw new Error(value);
       }, 0)
-      .takeWhile(acc => acc < attempts)
       .delay(delay);
   };
 }
