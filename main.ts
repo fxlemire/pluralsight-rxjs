@@ -15,8 +15,8 @@ function renderMovies(movies: any): void {
 }
 
 click
-  // .flatMap(e => load('movies.json'))
-  .flatMap(e => loadWithFetch('moviess.json'))
+  .flatMap(e => load('movies.json'))
+  // .flatMap(e => loadWithFetch('movies.json'))
   .subscribe(
     renderMovies,
     e => console.log(`error: ${e}`),

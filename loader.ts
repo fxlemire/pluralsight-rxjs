@@ -2,9 +2,7 @@ import {Observable, Observer} from 'rxjs';
 
 function load(url: string): Observable<any> {
   return Observable.create((observer: Observer<any>) => {
-    const xhr = new XMLHttpRequest();
-
-    xhr.addEventListener('load', () => {
+    function onLoad() {
       if (xhr.status === 200) {
         const data: any[] = JSON.parse(xhr.responseText);
         observer.next(data);
@@ -12,10 +10,19 @@ function load(url: string): Observable<any> {
       } else {
         observer.error(xhr.statusText);
       }
-    });
+    }
 
+    const xhr = new XMLHttpRequest();
+
+    xhr.addEventListener('load', onLoad);
     xhr.open('GET', url);
     xhr.send();
+
+    // Executed on subscription.unsubscribe()
+    return () => {
+      xhr.removeEventListener('load', onLoad);
+      xhr.abort();
+    };
   }).retryWhen(retryStrategy({attempts: 3, delay: 1500}));
 }
 
